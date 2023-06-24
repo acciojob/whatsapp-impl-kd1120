@@ -14,14 +14,12 @@ public class WhatsappRepository {
     private HashMap<Message, User> senderMap;
     private HashMap<Group, User> adminMap;
     private HashSet<String> userMobile;
-    private int customGroupCount;
-    private int messageId;
+   // private int customGroupCount;
+   // private int messageId;
     private int customGroupCount;
     private int messageId;
 
-    public void GroupRepository() {
-        groupMap = new HashMap<>();
-    }
+
 
 
 
