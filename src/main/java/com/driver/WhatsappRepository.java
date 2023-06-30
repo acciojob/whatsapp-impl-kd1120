@@ -13,12 +13,9 @@ public class WhatsappRepository {
     private HashMap<Group, List<Message>> groupMessageMap;
     private HashMap<Message, User> senderMap;
     private HashMap<Group, User> adminMap;
-    private HashMap<String , String> user;
     private HashSet<String> userMobile;
-
     private int customGroupCount;
     private int messageId;
-
 
     public WhatsappRepository(){
         this.groupMessageMap = new HashMap<Group, List<Message>>();
@@ -30,66 +27,65 @@ public class WhatsappRepository {
         this.messageId = 1;
     }
 
-    public String createUser(String name, String mob) throws Exception{
 
-       if(user.containsKey(mob)){
-       throw new Exception("User already exists");
-       }
-        user.put(name, mob);
-        return "SUCCESS";
+    public String createUser(String name, String mobile) throws Exception{
+
+        if(!userMobile.isEmpty() && userMobile.contains(mobile)){
+            throw new Exception("User already exists");
+        }
+        else{
+            userMobile.add(mobile);
+            return "SUCCESS";
+        }
     }
 
-   public Group createGroup(List<User> users){
-
-       Group group = new Group();
-       if(users.size()==2){
-            group.setName(String.valueOf(users.indexOf(1)));
-
-
+    public Group createGroup(List<User> users){
+        if(users.size() == 2){
+            Group group = new Group(users.get(1).getName(), 2);
+            adminMap.put(group,users.get(0));
+            groupUserMap.put(group,users);
+            return group;
         }
-       else if(users.size()>2){
-           String ans = "Group";
-           group.setName(ans + String.valueOf(users.size()));
-       }
+        else{
+            String s = "Group" + " " + customGroupCount;
+            Group group = new Group(s, users.size());
+            adminMap.put(group,users.get(0));
+            groupUserMap.put(group,users);
+            customGroupCount++;
+            return group;
+        }
+    }
 
-       return Group;
-   }
-
-//   public int createMessage(String content){
-//
-//       Message message = new Message(content);
-//
-//        messageId++;
-//        return message.getId();
-//   }
+    public int createMessage(String content){
+        Message message = new Message(messageId, content);
+        messageId++;
+        return message.getId();
+    }
 
     public int sendMessage(Message message, User sender, Group group) throws Exception{
-
-        for(Group group1 : adminMap.keySet()){
-            if(!group1.equals(group)){
-                throw new Exception("Group does not exist");
+        if (!groupUserMap.containsKey(group)){
+            throw new Exception("Group does not exist");
+        }
+        senderMap.put(message,sender);
+        List<User> list = new ArrayList<>(groupUserMap.get(group));
+        for(User user: list){
+            if(user.getMobile().equals(sender.getMobile())){
+                if(groupMessageMap.containsKey(group)){
+                    groupMessageMap.get(group).add(message);
+                    return  groupMessageMap.get(group).size();
+                }
+                else{
+                    List<Message> m = new ArrayList<>();
+                    m.add(message);
+                    groupMessageMap.put(group, m);
+                    return m.size();
+                }
             }
         }
-
-        for(User user1: adminMap.values()){
-            if(!user1.equals(user)){
-                throw new Exception("You are not allowed to send message");
-            }
-        }
-        int msg=0;
-        for(List<Message> messages: groupMessageMap.values()){
-            if(messages.equals(message)){
-                msg  = messages.size();
-            }
-        }
-
-
-
- return msg;
+        throw new Exception("You are not allowed to send message");
     }
 
     public String changeAdmin(User approver, User user, Group group) throws Exception{
-
         if(!groupUserMap.containsKey(group)){
             throw new Exception("Group does not exist");
         }
@@ -105,26 +101,43 @@ public class WhatsappRepository {
         }
         throw new Exception("User is not a participant");
     }
-    public int removeUser(User user) throws Exception{
 
-        return 0;
+    public int removeUser(User user) throws Exception{
+        for(Group x:groupUserMap.keySet()) {
+            List<User> list = new ArrayList<>(groupUserMap.get(x));
+            for (User f : list) {
+                if (f.getMobile().equals(user.getMobile())) {
+                    if (adminMap.get(x).getMobile().equals(user.getMobile())) {
+                        throw new Exception("Cannot remove admin");
+                    } else {
+                        List<Message> m = new ArrayList<>(groupMessageMap.get(x));
+                        for (Message g : m) {
+                            if (senderMap.get(g).getMobile().equals(user.getMobile())) {
+                                m.remove(g);
+                                senderMap.remove(g);
+                            }
+                        }
+                        groupUserMap.get(x).remove(user);
+                        x.setNumberOfParticipants(x.getNumberOfParticipants() - 1);
+                        return groupUserMap.get(x).size() + groupMessageMap.get(x).size() + senderMap.size();
+                    }
+                }
+            }
+        }
+        throw new Exception("User not found");
     }
 
     public String findMessage(Date start, Date end, int K) throws Exception{
-
-        return null;
-    }
-
-
-    public int createMessage(String content) {
-        int id = 0;
-        for(Message message : senderMap.keySet()){
-            if(message.getContent().equals(content)){
-                id = message.getId();
+        List<Message> list = new ArrayList<>();
+        for(Message m : senderMap.keySet()){
+            if(m.getTimestamp().compareTo(start)>0 && m.getTimestamp().compareTo(end)<0){
+                list.add(m);
             }
         }
-
-        return id;
+        Collections.sort(list,(a,b)->a.getTimestamp().compareTo(b.getTimestamp()));
+        if(K>list.size()){
+            throw new Exception("K is greater than the number of messages");
+        }
+        return list.get(K-1).getContent();
     }
 }
-
