@@ -13,16 +13,11 @@ public class WhatsappRepository {
     private HashMap<Group, List<Message>> groupMessageMap;
     private HashMap<Message, User> senderMap;
     private HashMap<Group, User> adminMap;
+    private HashMap<String , String> user;
     private HashSet<String> userMobile;
-   // private int customGroupCount;
-   // private int messageId;
+
     private int customGroupCount;
     private int messageId;
-
-
-
-
-
 
 
     public WhatsappRepository(){
@@ -37,17 +32,27 @@ public class WhatsappRepository {
 
     public String createUser(String name, String mob) throws Exception{
 
-       if(!userMobile.contains(mob)){
-           userMobile.add(mob);
+       if(user.containsKey(mob)){
+       throw new Exception("User already exists");
        }
-   return "SUCCESS";
+        user.put(name, mob);
+        return "SUCCESS";
     }
 
    public Group createGroup(List<User> users){
-        if(users.size()==2){
+
+       Group group = new Group();
+       if(users.size()==2){
+            group.setName(String.valueOf(users.indexOf(1)));
+
 
         }
-        return null;
+       else if(users.size()>2){
+           String ans = "Group";
+           group.setName(ans + String.valueOf(users.size()));
+       }
+
+       return Group;
    }
 
 //   public int createMessage(String content){
@@ -60,7 +65,27 @@ public class WhatsappRepository {
 
     public int sendMessage(Message message, User sender, Group group) throws Exception{
 
+        for(Group group1 : adminMap.keySet()){
+            if(!group1.equals(group)){
+                throw new Exception("Group does not exist");
+            }
+        }
 
+        for(User user1: adminMap.values()){
+            if(!user1.equals(user)){
+                throw new Exception("You are not allowed to send message");
+            }
+        }
+        int msg=0;
+        for(List<Message> messages: groupMessageMap.values()){
+            if(messages.equals(message)){
+                msg  = messages.size();
+            }
+        }
+
+
+
+ return msg;
     }
 
     public String changeAdmin(User approver, User user, Group group) throws Exception{
@@ -82,14 +107,24 @@ public class WhatsappRepository {
     }
     public int removeUser(User user) throws Exception{
 
+        return 0;
     }
 
     public String findMessage(Date start, Date end, int K) throws Exception{
 
+        return null;
     }
 
 
+    public int createMessage(String content) {
+        int id = 0;
+        for(Message message : senderMap.keySet()){
+            if(message.getContent().equals(content)){
+                id = message.getId();
+            }
+        }
 
-
+        return id;
     }
+}
 
